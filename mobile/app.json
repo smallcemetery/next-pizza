@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Next Pizza",
+    "slug": "next-pizza-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "nextpizza",
+    "platforms": ["ios", "android"],
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nextpizza.app"
+    },
+    "android": {
+      "package": "com.nextpizza.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}

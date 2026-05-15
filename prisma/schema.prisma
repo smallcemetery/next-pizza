@@ -1,0 +1,360 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+// Локально без Docker: DATABASE_URL не задан → prisma/dev.db (SQLite), см. prisma/env-bootstrap.ts и prisma/run-with-db.mjs
+// Продакшен PostgreSQL: DATABASE_URL=postgresql://... и provider = "postgresql"
+datasource db {
+    provider = "postgresql"
+    url      = env("POSTGRES_PRISMA_URL")
+    directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+    id Int @id @default(autoincrement())
+
+    fullName String
+    email    String    @unique
+    password String
+    role     UserRole  @default(USER)
+    verified DateTime?
+
+    provider   String?
+    providerId String?
+
+    bonusBalance Int @default(0)
+
+    referralCode String @unique @default(uuid())
+    referredById Int?
+    referredBy   User?  @relation("UserReferrals", fields: [referredById], references: [id])
+    referrals    User[] @relation("UserReferrals")
+
+    lastWheelSpinAt DateTime?
+
+    cart             Cart?
+    orders           Order[]
+    verificationCode VerificationCode?
+    achievements     UserAchievement[]
+    wheelRewards     WheelReward[]
+    mascotChats      MascotChat[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model MascotChat {
+    id Int @id @default(autoincrement())
+
+    userId Int
+    user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    title String @default("Новый чат")
+
+    messages MascotMessage[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model MascotMessage {
+    id Int @id @default(autoincrement())
+
+    chatId Int
+    chat   MascotChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+    role    String
+    content String
+
+    createdAt DateTime @default(now())
+}
+
+model Category {
+    id       Int       @id @default(autoincrement())
+    name     String    @unique
+    products Product[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Product {
+    id Int @id @default(autoincrement())
+
+    name     String
+    imageUrl String
+
+    disabled     Boolean      @default(false)
+    builderType  BuilderType?
+
+    ingredients Ingredient[]
+    items       ProductItem[]
+
+    category   Category @relation(fields: [categoryId], references: [id])
+    categoryId Int
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model ProductItem {
+    id Int @id @default(autoincrement())
+
+    price     Int
+    size      Int?
+    pizzaType Int?
+
+    cartItems CartItem[]
+
+    product   Product @relation(fields: [productId], references: [id])
+    productId Int
+}
+
+model Ingredient {
+    id Int @id @default(autoincrement())
+
+    name     String
+    price    Int
+    imageUrl String
+
+    /// Стоп-лист: ингредиент закончился — блюда с ним помечаются
+    isOutOfStock Boolean @default(false)
+
+    products  Product[]
+    cartItems CartItem[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Cart {
+    id Int @id @default(autoincrement())
+
+    user   User? @relation(fields: [userId], references: [id])
+    userId Int?  @unique
+
+    items CartItem[]
+
+    token String
+
+    totalAmount Int @default(0)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+    id Int @id @default(autoincrement())
+
+    cart   Cart @relation(fields: [cartId], references: [id])
+    cartId Int
+
+    productItem   ProductItem @relation(fields: [productItemId], references: [id])
+    productItemId Int
+
+    quantity Int @default(1)
+
+    ingredients Ingredient[]
+
+    /// Конфигурация конструктора (лимонад и т.п.)
+    builderPayload Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model PromoCode {
+    id Int @id @default(autoincrement())
+
+    code       String @unique
+    /// 5, 10 или 15 (%)
+    percentOff Int
+
+    maxUses   Int?
+    usedCount Int  @default(0)
+    active    Boolean @default(true)
+
+    expiresAt DateTime?
+
+    orders Order[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model HappyHourConfig {
+    id Int @id @default(1)
+
+    enabled Boolean @default(false)
+    /// Формат HH:mm (локаль сервера / МСК в бизнес-логике)
+    startTime String @default("15:00")
+    endTime   String @default("17:00")
+    /// Процент бонусов в «счастливые часы» (по умолчанию 20%)
+    bonusPercent Int @default(20)
+
+    updatedAt DateTime @updatedAt
+}
+
+model Order {
+    id Int @id @default(autoincrement())
+
+    user   User? @relation(fields: [userId], references: [id])
+    userId Int?
+
+    token String
+
+    /// Сумма к оплате деньгами (после скидок и списания бонусов), без доставки внутри — итог для ЮKassa
+    totalAmount Int
+    status      OrderStatus
+    paymentId   String?
+
+    items Json
+
+    fullName String
+    email    String
+    phone    String
+    address  String
+    comment  String?
+
+    deliveryType DeliveryType @default(DELIVERY)
+
+    fulfillmentStatus FulfillmentStatus @default(AWAITING_PAYMENT)
+    /// Автопрогресс статуса (выключается при ручном изменении в админке)
+    autoProgressEnabled Boolean   @default(true)
+    nextAutoAdvanceAt   DateTime?
+
+    /// Предзаказ: желаемое время
+    scheduledFor DateTime?
+
+    /// Сумма позиций до налогов/доставки/скидок
+    subtotalAmount Int @default(0)
+    vatAmount      Int @default(0)
+    deliveryFee    Int @default(0)
+
+    promoCodeId Int?
+    promoCode   PromoCode? @relation(fields: [promoCodeId], references: [id])
+    /// Фактически применённый % скидки (0 если бонусы участвуют)
+    promoPercentApplied Int @default(0)
+
+    bonusSpent  Int @default(0)
+    bonusEarned Int @default(0)
+
+    snakeBonusEarned Int     @default(0)
+    snakePlayed      Boolean @default(false)
+
+    paidAt DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model VerificationCode {
+    id Int @id @default(autoincrement())
+
+    user   User @relation(fields: [userId], references: [id])
+    userId Int  @unique
+
+    code String
+
+    createdAt DateTime @default(now())
+
+    @@unique([userId, code])
+}
+
+model Story {
+    id              Int    @id @default(autoincrement())
+    previewImageUrl String
+
+    items StoryItem[]
+
+    createdAt DateTime @default(now())
+}
+
+model StoryItem {
+    id Int @id @default(autoincrement())
+
+    storyId Int
+    story   Story @relation(fields: [storyId], references: [id])
+
+    sourceUrl String
+
+    createdAt DateTime @default(now())
+}
+
+model UserAchievement {
+    id Int @id @default(autoincrement())
+
+    userId Int
+    user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    type AchievementType
+
+    createdAt DateTime @default(now())
+
+    @@unique([userId, type])
+}
+
+model WheelReward {
+    id Int @id @default(autoincrement())
+
+    userId Int
+    user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    /// bonus | promo
+    rewardType String
+    value      String
+    claimed    Boolean  @default(false)
+
+    createdAt DateTime @default(now())
+}
+
+model WheelPrize {
+    id Int @id @default(autoincrement())
+
+    title       String
+    rewardType  String
+    value       String
+    chanceBasis Int
+    active      Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+enum OrderStatus {
+    PENDING
+    SUCCEEDED
+    CANCELLED
+}
+
+enum FulfillmentStatus {
+    AWAITING_PAYMENT
+    PAID
+    IN_PROGRESS
+    WAITING_COURIER
+    DELIVERING
+    READY_FOR_PICKUP
+    COMPLETED
+    CANCELLED
+}
+
+enum DeliveryType {
+    DELIVERY
+    PICKUP
+}
+
+enum UserRole {
+    USER
+    ADMIN
+}
+
+enum BuilderType {
+    LEMONADE
+}
+
+enum AchievementType {
+    FIRST_ORDER
+    GOURMET_ALL_CATEGORIES
+    NIGHT_OWL
+    EARLY_BIRD
+    FACTORY_FRIEND
+}

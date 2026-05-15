@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Next Pizza",
+    "slug": "next-pizza-react-native",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.nextpizza"
+    },
+    "android": {
+      "package": "com.example.nextpizza"
+    }
+  }
+}

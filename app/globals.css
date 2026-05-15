@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media screen and (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@layer base {
+  :root {
+    --foreground: 20 14.3% 4.1%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+
+    --primary: 263 85% 60%;
+    --primary-foreground: 60 9.1% 97.8%;
+
+    --secondary: 224 100% 97%;
+    --secondary-foreground: 24 9.8% 10%;
+
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    --border: 20 5.9% 90%;
+    --input: 0 0% 90%;
+    --ring: 263 85% 60%;
+    --radius: 18px;
+  }
+}
+
+* {
+  font-family: var(--font-nunito), sans-serif;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  border-radius: 6px;
+  background: #fff;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #dbdadd;
+  border-radius: 6px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #dbdadd;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply text-foreground;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(147, 51, 234, 0.2), transparent 38%),
+      radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.16), transparent 35%),
+      radial-gradient(circle at 40% 90%, rgba(236, 72, 153, 0.14), transparent 35%),
+      #f6f7ff;
+    min-height: 100vh;
+  }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 10px 35px rgba(47, 41, 88, 0.12);
+}
+
+.parallax-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.parallax-hero::before,
+.parallax-hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.parallax-hero::before {
+  width: 280px;
+  height: 280px;
+  background: rgba(99, 102, 241, 0.18);
+  top: -90px;
+  right: 8%;
+  transform: translateY(calc(var(--scroll, 0px) * 0.08));
+}
+
+.parallax-hero::after {
+  width: 220px;
+  height: 220px;
+  background: rgba(236, 72, 153, 0.18);
+  bottom: -80px;
+  left: 4%;
+  transform: translateY(calc(var(--scroll, 0px) * -0.06));
+}
+
+#nprogress .bar {
+  @apply bg-primary !important;
+}
+
+#nprogress .peg {
+  @apply shadow-md shadow-primary !important;
+}
+
+#nprogress .spinner-icon {
+  @apply border-t-primary border-l-primary !important;
+}
