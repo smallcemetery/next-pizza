@@ -1,4 +1,5 @@
 import { Nunito } from 'next/font/google';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import './globals.css';
 import { Providers } from '@/shared/components/shared/providers';
@@ -21,6 +22,7 @@ export default function RootLayout({
       </head>
       <body className={nunito.className}>
         <Providers>{children}</Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
